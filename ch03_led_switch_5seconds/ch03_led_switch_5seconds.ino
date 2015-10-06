@@ -6,7 +6,7 @@
 #define DEBOUNCE_DELAY 50
 #define DURATION 5000
 
-Bounce bouncer = new Bounce();
+Bounce bouncer = Bounce();
 // 定義狀態機的可能狀態
 typedef enum{
   S_OFF,
@@ -37,9 +37,9 @@ void setup() {
   
   // After setting up the button, setup the object
   bouncer.attach(SWITCH_PIN);
-  bouncer.interval(5);
+  bouncer.interval(DEBOUNCE_DELAY);
   
-  updateLED();
+  updateLed();
 }
 
 unsigned long time_previous;
@@ -49,4 +49,43 @@ void loop() {
   bouncer.update();
   boolean switch_status = bouncer.read();
 
+  switch(state){
+    case S_OFF:
+      if(switch_status == LOW){
+        time_previous = millis();
+        state = S_OFF_NO_PRESS;
+      }
+    break;
+    case S_OFF_NO_PRESS:
+      if(switch_status == LOW){
+        unsigned long time_current = millis();
+        if(time_current - time_previous >= DURATION){
+          state = S_ON;  
+        }
+      }  
+      else{
+        state = S_OFF;  
+      }
+      break;
+    case S_ON:
+      if(switch_status == HIGH){
+        time_previous = millis();
+        state = S_ON_PRESS;  
+      }
+    break;
+    case S_ON_PRESS:
+      if(switch_status == HIGH){
+        unsigned long time_current = millis();
+        if(time_current - time_previous >= DURATION){
+          state = S_OFF;  
+        }  
+      }
+      else{
+        state = S_ON;  
+      }
+      break;
+  }
+  //可以開 Tools 裡面的 Serial Monitor 看看送出的訊號
+  Serial.println(state);
+  updateLed();
 }
